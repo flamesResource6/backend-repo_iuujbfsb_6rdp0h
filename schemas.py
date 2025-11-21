@@ -11,38 +11,50 @@ Model name is converted to lowercase for the collection name:
 - BlogPost -> "blogs" collection
 """
 
-from pydantic import BaseModel, Field
-from typing import Optional
+from pydantic import BaseModel, Field, EmailStr
+from typing import Optional, Literal
+from datetime import datetime
 
-# Example schemas (replace with your own):
+# --- Business-specific schemas ---
 
+class Customer(BaseModel):
+    """
+    Customers who purchase or use services
+    Collection name: "customer"
+    """
+    name: str = Field(..., description="Nombre completo del cliente")
+    email: EmailStr = Field(..., description="Email del cliente")
+    phone: str = Field(..., description="Teléfono del cliente")
+
+class PrepaidCardPurchase(BaseModel):
+    """
+    Registro de compras de tarjeta prepago
+    Collection name: "prepaidcardpurchase"
+    """
+    customer_name: str = Field(..., description="Nombre del cliente")
+    customer_email: EmailStr = Field(..., description="Email del cliente")
+    customer_phone: str = Field(..., description="Teléfono del cliente")
+    amount_selected: int = Field(..., ge=0, description="Monto de recarga seleccionado en EUR")
+    card_price: int = Field(..., ge=0, description="Precio de emisión de la tarjeta en EUR")
+    total_price: int = Field(..., ge=0, description="Total a pagar en EUR")
+    payment_provider: Literal["stripe", "mock"] = Field(..., description="Proveedor de pago usado")
+    payment_status: Literal["pending", "paid", "failed"] = Field("pending", description="Estado del pago")
+    payment_reference: Optional[str] = Field(None, description="ID de pago o referencia del proveedor")
+    delivery_method: Literal["recogida", "envio"] = Field("recogida", description="Cómo recibirá la tarjeta física")
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+# Example (kept for reference, not used directly)
 class User(BaseModel):
-    """
-    Users collection schema
-    Collection name: "user" (lowercase of class name)
-    """
-    name: str = Field(..., description="Full name")
-    email: str = Field(..., description="Email address")
-    address: str = Field(..., description="Address")
-    age: Optional[int] = Field(None, ge=0, le=120, description="Age in years")
-    is_active: bool = Field(True, description="Whether user is active")
+    name: str
+    email: str
+    address: str
+    age: Optional[int] = None
+    is_active: bool = True
 
 class Product(BaseModel):
-    """
-    Products collection schema
-    Collection name: "product" (lowercase of class name)
-    """
-    title: str = Field(..., description="Product title")
-    description: Optional[str] = Field(None, description="Product description")
-    price: float = Field(..., ge=0, description="Price in dollars")
-    category: str = Field(..., description="Product category")
-    in_stock: bool = Field(True, description="Whether product is in stock")
-
-# Add your own schemas here:
-# --------------------------------------------------
-
-# Note: The Flames database viewer will automatically:
-# 1. Read these schemas from GET /schema endpoint
-# 2. Use them for document validation when creating/editing
-# 3. Handle all database operations (CRUD) directly
-# 4. You don't need to create any database endpoints!
+    title: str
+    description: Optional[str] = None
+    price: float
+    category: str
+    in_stock: bool = True
